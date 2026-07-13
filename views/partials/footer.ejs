@@ -1,0 +1,18 @@
+<!-- Footer -->
+<footer class="app-footer">
+  <span class="app-footer__brand">Smart Weather</span>
+  <span class="app-footer__divider">•</span>
+  <span id="footer-date"></span>
+  <span class="app-footer__divider">•</span>
+  Made by Megersa Leliso
+  <span class="app-footer__divider">•</span>
+  Powered by <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>
+</footer>
+
+<script>
+  document.getElementById('footer-date').textContent =
+    new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+</script>
+</body>
+
+</html>

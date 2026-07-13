@@ -1,0 +1,355 @@
+<%- include('partials/header') %>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Weather Signature Background Effect -->
+  <div class="weather-signature-bg">
+    <% if (typeof weather !== 'undefined' && weather) { %>
+      <% if (weather.theme === 'day') { %>
+        <div class="sky-effect sky-effect--day">
+          <div class="sun-glow"></div>
+          <div class="cloud cloud-1"></div>
+          <div class="cloud cloud-2"></div>
+        </div>
+      <% } else if (weather.theme === 'sunset') { %>
+        <div class="sky-effect sky-effect--sunset">
+          <div class="sunset-glow"></div>
+          <div class="horizon-glow"></div>
+        </div>
+      <% } else if (weather.theme === 'night') { %>
+        <div class="sky-effect sky-effect--night">
+          <div class="star star-1"></div>
+          <div class="star star-2"></div>
+          <div class="star star-3"></div>
+          <div class="star star-4"></div>
+          <div class="star star-5"></div>
+          <div class="moon-glow"></div>
+        </div>
+      <% } %>
+    <% } else { %>
+      <div class="sky-effect sky-effect--default">
+        <div class="default-ambient"></div>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="app-wrapper">
+    <div class="container">
+
+      <!-- Header -->
+      <header class="app-header">
+        <div class="app-header__logo">
+          <i class="ph ph-cloud-sun app-header__icon"></i>
+          <h1 class="app-header__title">Smart <span class="weight-light">Weather</span></h1>
+        </div>
+        <p class="app-header__tagline">Atmospheric data, wind velocity, and solar tracking for any coordinates.</p>
+      </header>
+
+      <!-- Search Section (No container card, directly on background) -->
+      <section class="search-section" id="searchSection">
+        <form class="search-form" action="/" method="GET" id="searchForm">
+          <!-- Hidden inputs for coordinates -->
+          <input type="hidden" name="lat" id="latInput" />
+          <input type="hidden" name="lon" id="lonInput" />
+          <div class="search-input-wrapper">
+            <i class="ph ph-map-pin search-input-wrapper__icon"></i>
+            <input
+              type="text"
+              class="search-input"
+              id="cityInput"
+              name="city"
+              placeholder="Enter city name…"
+              value="<%= typeof city !== 'undefined' ? city : '' %>"
+              autocomplete="off"
+              required
+            />
+            <!-- Suggestions Dropdown -->
+            <div class="search-suggestions" id="searchSuggestions" role="listbox"></div>
+          </div>
+          <button type="submit" class="search-btn" id="searchBtn">
+            <i class="ph ph-magnifying-glass search-btn__icon"></i>
+            Search
+          </button>
+        </form>
+      </section>
+
+      <!-- Error Alert -->
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="error-alert" role="alert" id="errorAlert">
+          <i class="ph ph-warning-octagon error-alert__icon"></i>
+          <span><%= error %></span>
+        </div>
+      <% } %>
+
+      <!-- Weather Results -->
+      <% if (typeof weather !== 'undefined' && weather) { %>
+        <section class="weather-results" id="weatherResults">
+
+          <!-- Hero Card (Prominent & Distinct) -->
+          <div class="weather-hero">
+            <div class="weather-hero__location">
+              <span class="weather-hero__city"><%= weather.city %></span>
+              <span class="weather-hero__country"><%= weather.country %></span>
+            </div>
+            <p class="weather-hero__date"><%= weather.date %></p>
+
+            <div class="weather-hero__icon-wrapper">
+              <%- weather.iconSvg %>
+            </div>
+
+            <div class="weather-hero__temp">
+              <span class="data-mono"><%= weather.temp %></span><sup>°C</sup>
+            </div>
+            <p class="weather-hero__description"><%= weather.description %></p>
+            <span class="weather-hero__feels-like">
+              <i class="ph ph-thermometer"></i> Feels like <span class="data-mono"><%= weather.feels_like %></span>°C
+            </span>
+          </div>
+
+          <!-- Hourly Forecast Strip -->
+          <div class="hourly-forecast">
+            <h3 class="hourly-forecast__title">Hourly Forecast</h3>
+            <div class="hourly-forecast__strip">
+              <% weather.hourly.forEach(function(hour) { %>
+                <div class="hourly-item">
+                  <span class="hourly-item__time"><%= hour.time %></span>
+                  <div class="hourly-item__icon-wrapper">
+                    <%- hour.iconSvg %>
+                  </div>
+                  <span class="hourly-item__temp"><span class="data-mono"><%= hour.temp %></span>°</span>
+                </div>
+              <% }); %>
+            </div>
+          </div>
+
+          <!-- Metrics Grid (Varying shadow/borders) -->
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <i class="ph ph-drop metric-card__icon"></i>
+              <div class="metric-card__value"><span class="data-mono"><%= weather.humidity %></span>%</div>
+              <div class="metric-card__label">Humidity</div>
+            </div>
+            <div class="metric-card">
+              <i class="ph ph-wind metric-card__icon"></i>
+              <div class="metric-card__value"><span class="data-mono"><%= weather.wind_speed %></span> m/s</div>
+              <div class="metric-card__label">Wind Speed</div>
+            </div>
+            <div class="metric-card">
+              <i class="ph ph-gauge metric-card__icon"></i>
+              <div class="metric-card__value"><span class="data-mono"><%= weather.pressure %></span> hPa</div>
+              <div class="metric-card__label">Pressure</div>
+            </div>
+            <div class="metric-card">
+              <i class="ph ph-eye metric-card__icon"></i>
+              <div class="metric-card__value"><span class="data-mono"><%= weather.visibility %></span> km</div>
+              <div class="metric-card__label">Visibility</div>
+            </div>
+          </div>
+
+          <!-- Sun Schedule -->
+          <div class="sun-schedule">
+            <h2 class="sun-schedule__title">Solar Schedule</h2>
+            <div class="sun-schedule__row">
+              <div class="sun-item">
+                <i class="ph ph-sunrise sun-item__icon"></i>
+                <span class="sun-item__time data-mono"><%= weather.sunrise %></span>
+                <span class="sun-item__label">Sunrise</span>
+              </div>
+              <div class="sun-schedule__divider"></div>
+              <div class="sun-item">
+                <i class="ph ph-sunset sun-item__icon"></i>
+                <span class="sun-item__time data-mono"><%= weather.sunset %></span>
+                <span class="sun-item__label">Sunset</span>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+      <% } else if (typeof error === 'undefined' || !error) { %>
+        <!-- Welcome State -->
+        <div class="welcome-state" id="welcomeState">
+          <i class="ph ph-globe-hemisphere-east welcome-state__icon"></i>
+          <h2 class="welcome-state__title">Discover Your Weather</h2>
+          <p class="welcome-state__text">
+            Enter a city name above to get real-time weather conditions, temperature, wind, humidity, and more.
+          </p>
+        </div>
+      <% } %>
+
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('searchForm');
+    const overlay = document.getElementById('loadingOverlay');
+    const cityInput = document.getElementById('cityInput');
+    const latInput = document.getElementById('latInput');
+    const lonInput = document.getElementById('lonInput');
+    const suggestionsContainer = document.getElementById('searchSuggestions');
+    
+    let debounceTimer;
+    let currentController = null;
+    let highlightedIndex = -1;
+    let suggestionsData = [];
+
+    // Show loading overlay on form submit
+    if (form && overlay) {
+      form.addEventListener('submit', () => {
+        overlay.classList.add('active');
+      });
+    }
+
+    if (cityInput && suggestionsContainer) {
+      cityInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        
+        // Reset coordinates if query changes
+        latInput.value = '';
+        lonInput.value = '';
+        
+        clearTimeout(debounceTimer);
+        
+        if (query.length < 2) {
+          hideSuggestions();
+          return;
+        }
+
+        debounceTimer = setTimeout(() => {
+          fetchSuggestions(query);
+        }, 300);
+      });
+
+      cityInput.addEventListener('keydown', (e) => {
+        const items = suggestionsContainer.querySelectorAll('.suggestion-item');
+        if (!suggestionsContainer.classList.contains('active') || items.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          highlightedIndex = (highlightedIndex + 1) % items.length;
+          updateHighlight(items);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          highlightedIndex = (highlightedIndex - 1 + items.length) % items.length;
+          updateHighlight(items);
+        } else if (e.key === 'Enter') {
+          if (highlightedIndex >= 0 && highlightedIndex < items.length) {
+            e.preventDefault();
+            selectSuggestion(suggestionsData[highlightedIndex]);
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          hideSuggestions();
+        }
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!cityInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+          hideSuggestions();
+        }
+      });
+    }
+
+    function updateHighlight(items) {
+      items.forEach((item, index) => {
+        if (index === highlightedIndex) {
+          item.classList.add('highlighted');
+          item.setAttribute('aria-selected', 'true');
+          item.scrollIntoView({ block: 'nearest' });
+        } else {
+          item.classList.remove('highlighted');
+          item.removeAttribute('aria-selected');
+        }
+      });
+    }
+
+    async function fetchSuggestions(query) {
+      if (currentController) {
+        currentController.abort();
+      }
+
+      currentController = new AbortController();
+      const signal = currentController.signal;
+
+      try {
+        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5`;
+        const response = await fetch(url, { signal });
+        
+        if (!response.ok) {
+          hideSuggestions();
+          return;
+        }
+
+        const data = await response.json();
+        
+        if (!data.results || data.results.length === 0) {
+          hideSuggestions();
+          return;
+        }
+
+        suggestionsData = data.results;
+        renderSuggestions(data.results);
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          hideSuggestions();
+        }
+      }
+    }
+
+    function renderSuggestions(results) {
+      suggestionsContainer.innerHTML = '';
+      highlightedIndex = -1;
+
+      results.forEach((result, index) => {
+        const item = document.createElement('div');
+        item.className = 'suggestion-item';
+        item.role = 'option';
+        item.id = `suggestion-option-${index}`;
+
+        const name = result.name;
+        const region = result.admin1 ? `, ${result.admin1}` : '';
+        const country = result.country_code ? `, ${result.country_code}` : '';
+        
+        item.innerHTML = `
+          <i class="ph ph-map-pin" style="color: var(--color-text-muted);"></i>
+          <span class="suggestion-item__text"><strong>${name}</strong>${region}${country}</span>
+        `;
+
+        item.addEventListener('click', () => {
+          selectSuggestion(result);
+        });
+
+        suggestionsContainer.appendChild(item);
+      });
+
+      suggestionsContainer.classList.add('active');
+    }
+
+    function selectSuggestion(result) {
+      const region = result.admin1 ? `, ${result.admin1}` : '';
+      const country = result.country_code ? `, ${result.country_code}` : '';
+      
+      cityInput.value = `${result.name}${region}${country}`;
+      latInput.value = result.latitude;
+      lonInput.value = result.longitude;
+      
+      hideSuggestions();
+      
+      if (overlay) {
+        overlay.classList.add('active');
+      }
+      form.submit();
+    }
+
+    function hideSuggestions() {
+      suggestionsContainer.classList.remove('active');
+      suggestionsContainer.innerHTML = '';
+      highlightedIndex = -1;
+      suggestionsData = [];
+    }
+  </script>
+
+<%- include('partials/footer') %>
