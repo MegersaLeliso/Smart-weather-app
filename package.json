@@ -1,22 +1,21 @@
 {
   "name": "smart_weather_web_app",
   "version": "1.0.0",
-  "description": "",
+  "description": "An intelligent weather dashboard with localized logic and dynamic styling.",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "axios": "^1.18.1",
-    "ejs": "^6.0.1",
-    "express": "^5.2.1"
+    "axios": "^1.7.0",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.0"
   }
 }
