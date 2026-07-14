@@ -51,7 +51,7 @@ function formatLocalDate(isoStr) {
  */
 function mapWmoToIcon(code) {
   const mapping = {
-    0: 'clear.svg.svg',
+    0: 'clear.svg',
     1: 'clouds.svg',
     2: 'clouds.svg',
     3: 'clouds.svg',
