@@ -84,6 +84,26 @@ function mapWmoToIcon(code) {
 }
 
 /**
+ * Picks the 3D hero model (public/models/<model>.glb) and the ambient
+ * particle layer that best match a WMO weather code and day/night state.
+ * @param {number} code
+ * @param {boolean} isDay
+ * @returns {{model: 'sun'|'moon'|'cloud'|'rain', particles: 'none'|'clouds'|'rain'|'snow'|'stars'}}
+ */
+function mapWmoToScene(code, isDay) {
+  const isSnow = (code >= 71 && code <= 77) || code === 85 || code === 86;
+  const isWet = (code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95;
+
+  if (isWet) return { model: 'rain', particles: 'rain' };
+  if (isSnow) return { model: 'cloud', particles: 'snow' };
+  if (code === 0 || code === 1) {
+    return isDay ? { model: 'sun', particles: 'clouds' } : { model: 'moon', particles: 'stars' };
+  }
+  // Partly cloudy, overcast, fog
+  return { model: 'cloud', particles: isDay ? 'clouds' : 'stars' };
+}
+
+/**
  * Reads the content of an SVG file and returns it as an inline string.
  * Falls back to no-result.svg if the target file is missing.
  * @param {string} filename
@@ -211,6 +231,7 @@ function formatWeatherData(data, cityName, countryCode) {
     sunset: formatLocalTime(daily.sunset[0]),
     is_day: is_day,
     theme: theme,
+    scene: mapWmoToScene(current.weather_code, is_day),
     hourly: hourlyStrip
   };
 }

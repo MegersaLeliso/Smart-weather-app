@@ -34,6 +34,9 @@
         <div class="default-ambient"></div>
       </div>
     <% } %>
+    <% if (typeof weather !== 'undefined' && weather && weather.scene) { %>
+      <canvas class="ambient-particles" id="ambientParticles" data-particles="<%= weather.scene.particles %>" aria-hidden="true"></canvas>
+    <% } %>
   </div>
 
   <div class="app-wrapper">
@@ -145,8 +148,12 @@
               <% } %>
             </p>
 
-            <div class="weather-hero__icon-wrapper">
-              <%- weather.iconSvg %>
+            <div class="hero-stage" data-hero-3d data-model="<%= weather.scene.model %>" data-theme="<%= weather.theme %>">
+              <canvas class="hero-stage__canvas" tabindex="0" role="img"
+                      aria-label="3D <%= weather.description %> model — drag or use arrow keys to spin"></canvas>
+              <div class="weather-hero__icon-wrapper hero-stage__fallback">
+                <%- weather.iconSvg %>
+              </div>
             </div>
 
             <div class="weather-hero__temp">
@@ -159,7 +166,7 @@
           </div>
 
           <!-- Hourly Forecast Strip -->
-          <div class="hourly-forecast">
+          <div class="hourly-forecast tilt-card" data-tilt="3">
             <h3 class="hourly-forecast__title">Hourly Forecast</h3>
             <div class="hourly-forecast__strip">
               <% weather.hourly.forEach(function(hour) { %>
@@ -176,22 +183,22 @@
 
           <!-- Metrics Grid (Varying shadow/borders) -->
           <div class="metrics-grid">
-            <div class="metric-card">
+            <div class="metric-card tilt-card" data-tilt="10">
               <i class="ph ph-drop metric-card__icon"></i>
               <div class="metric-card__value"><span class="data-mono"><%= weather.humidity %></span>%</div>
               <div class="metric-card__label">Humidity</div>
             </div>
-            <div class="metric-card">
+            <div class="metric-card tilt-card" data-tilt="10">
               <i class="ph ph-wind metric-card__icon"></i>
               <div class="metric-card__value"><span class="data-mono"><%= weather.wind_speed %></span> km/h</div>
               <div class="metric-card__label">Wind Speed</div>
             </div>
-            <div class="metric-card">
+            <div class="metric-card tilt-card" data-tilt="10">
               <i class="ph ph-gauge metric-card__icon"></i>
               <div class="metric-card__value"><span class="data-mono"><%= weather.pressure %></span> hPa</div>
               <div class="metric-card__label">Pressure</div>
             </div>
-            <div class="metric-card">
+            <div class="metric-card tilt-card" data-tilt="10">
               <i class="ph ph-eye metric-card__icon"></i>
               <div class="metric-card__value"><span class="data-mono"><%= weather.visibility %></span> km</div>
               <div class="metric-card__label">Visibility</div>
@@ -200,7 +207,7 @@
 
           <!-- Outdoor / Laundry Suitability -->
           <% if (typeof suitability !== 'undefined' && suitability) { %>
-            <div class="suitability suitability--<%= suitability.level %>" id="suitability">
+            <div class="suitability suitability--<%= suitability.level %> tilt-card" data-tilt="3" id="suitability">
               <div class="suitability__header">
                 <i class="ph-fill <%= suitability.level === 'good' ? 'ph-check-circle' : (suitability.level === 'fair' ? 'ph-warning-circle' : 'ph-x-circle') %> suitability__icon"></i>
                 <div>
@@ -222,7 +229,7 @@
           <% } %>
 
           <!-- Sun Schedule -->
-          <div class="sun-schedule">
+          <div class="sun-schedule tilt-card" data-tilt="5">
             <h2 class="sun-schedule__title">Solar Schedule</h2>
             <div class="sun-schedule__row">
               <div class="sun-item">
@@ -491,5 +498,18 @@
       suggestionsData = [];
     }
   </script>
+
+  <script src="/js/ambient.js" defer></script>
+  <% if (typeof weather !== 'undefined' && weather && weather.scene) { %>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script type="module" src="/js/hero3d.js"></script>
+  <% } %>
 
 <%- include('partials/footer') %>
