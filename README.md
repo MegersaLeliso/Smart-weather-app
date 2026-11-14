@@ -37,8 +37,15 @@ All animations respect the operating system's *reduce motion* setting.
 
 If PostgreSQL is unavailable, the dashboard still shows live weather; the database-backed sections are simply hidden.
 
+### Pack & Wear Just-in-Time Alarms (Web Push)
+- Click **Enable** under *My Outdoor Thresholds → Seasonal notifications* to get browser notifications such as *"☂️ Tokyo: Rain starting at 1:00 PM — Pack an umbrella"* or *"🧥 Temperature dropping 12°C by 3:00 PM — Wear an extra layer"*.
+- An hourly `node-cron` job checks every **saved city** with the Major Shift detector and only alerts for shifts starting within the next 3 hours. Your *Sudden rain changes* / *Temperature drops* toggles are respected, and each alarm is sent once (tracked in `push_notification_log`).
+- **Send test** delivers a test notification. Stale subscriptions (for example one created with a different VAPID key) are detected and replaced automatically; push-service errors are logged with their HTTP status and reason.
+- One subscription is stored at a time (`user_preferences.push_subscription`), so enabling alarms in another browser replaces the previous one.
+- Alarms run only while the server is running; on hosts that sleep when idle (such as Render's free tier), hourly checks pause until the app wakes up.
+
 ## Prerequisites
-- Node.js (v18 or higher recommended)
+- Node.js 20 or higher (required by node-cron 4)
 - npm
 - PostgreSQL (optional, needed for the saved-data features)
 - A browser with WebGL for the 3D features
@@ -61,17 +68,32 @@ If PostgreSQL is unavailable, the dashboard still shows live weather; the databa
    psql -d weather_db -f db/schema.sql
    ```
    `schema.sql` is safe to re-run: on an existing database it adds any new columns (such as the notification toggles) without touching your data.
-4. Start the server
+4. Configure Web Push for Pack & Wear alarms (optional)
+   ```bash
+   npx web-push generate-vapid-keys
+   ```
+   Put the keys in `.env` as `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`, and set `VAPID_SUBJECT` to a `mailto:` address or your site's `https://` URL (not localhost). Without these, alarms are switched off and the rest of the app works normally. Set `ALARMS_DISABLED=1` to turn off the hourly job.
+5. Start the server
    ```bash
    npm start        # or: npm run dev  (auto-reload with nodemon)
    ```
-5. Open http://localhost:3000 in your browser
+6. Open http://localhost:3000 in your browser (push notifications need `localhost` or HTTPS)
+
+### Tests
+```bash
+npm test
+```
+Runs the Pack & Wear alarm tests (`test/`), which use in-memory fakes, so they need no database, network, or push service.
 
 ## Project structure
 
 ```
 server.js                 Express bootstrap
 routes/weather.js         Dashboard route, saved cities, history, preferences
+routes/push.js            Web Push subscribe / unsubscribe / test endpoints
+services/forecast.js      Cache-aware Open-Meteo fetch (shared by route and alarm job)
+services/push.js          web-push wrapper: VAPID setup, subscription validation, error reporting
+jobs/alarms.js            Hourly Pack & Wear alarm job (node-cron)
 utils/weatherHelpers.js   Open-Meteo formatting, theme + 3D model/particle mapping
 utils/suitability.js      Outdoor/laundry evaluation
 utils/shiftDetector.js    Major Shift detection, chart geometry, alert-toggle filtering
@@ -81,6 +103,9 @@ views/                    EJS templates
 public/js/hero3d.js       Three.js 3D weather hero
 public/js/ambient.js      Particle layer + card tilt
 public/js/skyview.js      MapLibre 3D City Sky View
+public/js/push.js         Notification permission + push subscription UI
+public/sw.js              Service worker that displays push notifications
+test/                     node:test suites (npm test)
 public/models/*.glb       3D weather models exported from Blender
 blender/weather_models.blend  Blender source file for the models
 ```
@@ -90,6 +115,7 @@ blender/weather_models.blend  Blender source file for the models
 - EJS templating
 - Axios
 - PostgreSQL (`pg`)
+- [web-push](https://github.com/web-push-libs/web-push) + [node-cron](https://github.com/node-cron/node-cron) for alarms
 - [Three.js](https://threejs.org) (loaded from CDN)
 - [MapLibre GL JS](https://maplibre.org) + [OpenFreeMap](https://openfreemap.org) tiles (loaded from CDN)
 - [Blender](https://www.blender.org) for the 3D models

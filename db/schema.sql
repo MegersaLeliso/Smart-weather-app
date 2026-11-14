@@ -42,3 +42,12 @@ ALTER TABLE user_preferences
   ADD COLUMN IF NOT EXISTS alert_rain_changes BOOLEAN NOT NULL DEFAULT true,
   ADD COLUMN IF NOT EXISTS alert_temp_drops   BOOLEAN NOT NULL DEFAULT true;
 INSERT INTO user_preferences (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+
+-- Pack & Wear alarms: this browser's Web Push subscription (single-user app, so it lives on the prefs row)
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS push_subscription JSONB;
+
+-- One row per alarm already pushed, so the hourly job never repeats the same alert
+CREATE TABLE IF NOT EXISTS push_notification_log (
+  dedupe_key  VARCHAR(200) PRIMARY KEY,
+  sent_at     TIMESTAMPTZ  NOT NULL DEFAULT now()
+);

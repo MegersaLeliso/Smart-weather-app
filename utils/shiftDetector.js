@@ -130,6 +130,8 @@ function detectMajorShifts(data) {
       title: `Temperature plunge: −${round(drop.amount)}°C in ${drop.to - drop.from} h`,
       detail: `${round(temps[drop.from])}°C at ${hourLabel(hourly.time[drop.from])} → ${round(temps[drop.to])}°C by ${hourLabel(hourly.time[drop.to])}. Bring an extra layer.`,
       fromIndex: drop.from, toIndex: drop.to, hoursAway: drop.from - start,
+      atIso: hourly.time[drop.to], amount: round(drop.amount),
+      fromTemp: round(temps[drop.from]), toTemp: round(temps[drop.to]),
     });
   }
   if (rise) {
@@ -138,6 +140,8 @@ function detectMajorShifts(data) {
       title: `Rapid warm-up: +${round(rise.amount)}°C in ${rise.to - rise.from} h`,
       detail: `${round(temps[rise.from])}°C at ${hourLabel(hourly.time[rise.from])} → ${round(temps[rise.to])}°C by ${hourLabel(hourly.time[rise.to])}.`,
       fromIndex: rise.from, toIndex: rise.to, hoursAway: rise.from - start,
+      atIso: hourly.time[rise.to], amount: round(rise.amount),
+      fromTemp: round(temps[rise.from]), toTemp: round(temps[rise.to]),
     });
   }
 
@@ -159,6 +163,7 @@ function detectMajorShifts(data) {
           title: `Sudden ${what} onset in about ${hrs} h`,
           detail: `Dry now (${nowProb}% chance) → ${p}% chance of ${what} by ${hourLabel(hourly.time[j])}.`,
           fromIndex: start, toIndex: j, hoursAway: hrs,
+          atIso: hourly.time[j], kind: what, chance: p,
         });
         break;
       }

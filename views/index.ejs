@@ -413,6 +413,20 @@
                        <%= preferences.alert_temp_drops !== false ? 'checked' : '' %> />
                 <span class="toggle__track" aria-hidden="true"><span class="toggle__thumb"></span></span>
               </label>
+
+              <%# Pack & Wear Just-in-Time Alarms: browser push for the alerts switched on above %>
+              <div class="push-alarms" id="pushAlarms" data-vapid-key="<%= typeof vapidPublicKey !== 'undefined' ? vapidPublicKey : '' %>">
+                <span class="toggle__text">
+                  <span class="toggle__label"><i class="ph ph-backpack"></i> Pack &amp; Wear alarms</span>
+                  <span class="toggle__hint" id="pushStatus" aria-live="polite"><% if (savedCities && savedCities.length) { %>Get a browser notification, checked hourly, when your saved cities are about to change.<% } else { %>Star a city to get alarms for it, then enable browser notifications.<% } %></span>
+                </span>
+                <span class="push-alarms__actions">
+                  <button type="button" class="push-btn" id="pushTestBtn" hidden>Send test</button>
+                  <button type="button" class="push-btn push-btn--primary" id="pushEnableBtn" aria-pressed="false" disabled>
+                    <i class="ph ph-bell-simple-ringing"></i><span>Enable</span>
+                  </button>
+                </span>
+              </div>
             </fieldset>
             <button type="submit" class="search-btn prefs__save"><i class="ph ph-floppy-disk"></i> Save preferences</button>
           </form>
@@ -675,6 +689,7 @@
 
   <script src="/js/ambient.js" defer></script>
   <script src="/js/skyview.js" defer></script>
+  <script src="/js/push.js" defer></script>
   <% if (typeof weather !== 'undefined' && weather && weather.scene) { %>
     <script type="importmap">
       {

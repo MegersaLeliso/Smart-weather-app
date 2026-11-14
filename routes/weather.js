@@ -14,13 +14,12 @@ const { formatWeatherData } = require('../utils/weatherHelpers');
 const { evaluateSuitability } = require('../utils/suitability');
 const { applyAlertPreferences } = require('../utils/shiftDetector');
 const savedCities = require('../models/savedCities');
-const weatherCache = require('../models/weatherCache');
+const { getForecast } = require('../services/forecast');
 const searchHistory = require('../models/searchHistory');
 const preferences = require('../models/preferences');
 
 const router = express.Router();
 
-const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
 const GEOCODE_URL = 'https://geocoding-api.open-meteo.com/v1/search';
 
 /** Runs a DB operation; logs and returns `fallback` on failure instead of throwing. */
@@ -72,28 +71,6 @@ async function renderDashboard(req, res, { weather = null, error = null, city = 
     savedMatch,
     returnTo: req.originalUrl,
   });
-}
-
-/** Fetches the forecast, serving from the PostgreSQL cache when fresh. */
-async function getForecast(lat, lon) {
-  const cached = await safeDb('read cache', () => weatherCache.getCachedForecast(lat, lon), null);
-  if (cached) {
-    return { data: cached.payload, fromCache: true, fetchedAt: new Date(cached.fetched_at) };
-  }
-
-  const response = await axios.get(FORECAST_URL, {
-    params: {
-      latitude: lat,
-      longitude: lon,
-      current: 'temperature_2m,apparent_temperature,relative_humidity_2m,pressure_msl,wind_speed_10m,weather_code,is_day,precipitation',
-      daily: 'sunrise,sunset',
-      hourly: 'temperature_2m,weather_code,precipitation_probability',
-      timezone: 'auto',
-    },
-  });
-
-  await safeDb('write cache', () => weatherCache.setCachedForecast(lat, lon, response.data));
-  return { data: response.data, fromCache: false, fetchedAt: new Date() };
 }
 
 /**

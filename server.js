@@ -9,6 +9,9 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const weatherRouter = require('./routes/weather');
+const pushRouter = require('./routes/push');
+const pushService = require('./services/push');
+const { startAlarmSchedule } = require('./jobs/alarms');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,6 +31,10 @@ app.use(express.urlencoded({ extended: false }));
 // 3. Mount Application Routers
 // Route all root-level requests through our dedicated weather sub-router
 app.use('/', weatherRouter);
+app.use('/push', pushRouter);
+
+// Public VAPID key for the browser's PushManager.subscribe() (empty when push isn't configured)
+app.locals.vapidPublicKey = pushService.isConfigured() ? pushService.PUBLIC_KEY : '';
 
 // 4. Fallback 404 Route Handler
 // If a request hits none of the designated endpoints above, generate a structured 404 response
@@ -61,4 +68,6 @@ app.use((err, req, res, next) => {
 // 6. Bind Server Instance to System Port
 app.listen(PORT, () => {
     console.log(`[SERVER OK] Application spinning up at: http://localhost:${PORT}`);
+    // Pack & Wear Just-in-Time Alarms: hourly push check
+    startAlarmSchedule();
 });
