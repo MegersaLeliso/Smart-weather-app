@@ -165,6 +165,43 @@
             </span>
           </div>
 
+          <!-- 3D City Sky View (MapLibre GL JS + OpenFreeMap) -->
+          <section class="sky-view" id="skyView"
+                   data-lat="<%= weather.latitude %>" data-lon="<%= weather.longitude %>" data-theme="<%= weather.theme %>">
+            <div class="sky-view__header">
+              <h3 class="sky-view__title"><i class="ph ph-buildings"></i> 3D City Sky View</h3>
+              <div class="sky-view__actions">
+                <button type="button" class="sky-view__btn" id="skyOrbitBtn" aria-pressed="false" hidden>
+                  <i class="ph ph-arrows-clockwise"></i><span>Orbit</span>
+                </button>
+                <button type="button" class="sky-view__btn sky-view__toggle" id="skyToggle"
+                        aria-expanded="true" aria-controls="skyViewBody">
+                  <span class="sky-view__toggle-label">Collapse</span>
+                  <i class="ph ph-caret-down sky-view__caret"></i>
+                </button>
+              </div>
+            </div>
+            <div class="sky-view__body" id="skyViewBody">
+              <div class="sky-view__inner">
+                <div class="sky-view__map" id="skyMap" role="region" aria-label="3D map of <%= weather.city %>">
+                  <p class="sky-view__status" id="skyStatus">Loading 3D map…</p>
+                </div>
+              </div>
+            </div>
+          </section>
+          <script>
+            // Set the initial expanded state before paint: saved choice, else expanded on desktop / collapsed on phones
+            (function () {
+              var saved = null;
+              try { saved = localStorage.getItem('skyView.expanded'); } catch (e) {}
+              var expanded = saved !== null ? saved === '1' : !window.matchMedia('(max-width: 600px)').matches;
+              if (!expanded) {
+                document.getElementById('skyView').classList.add('is-collapsed');
+                document.getElementById('skyToggle').setAttribute('aria-expanded', 'false');
+              }
+            })();
+          </script>
+
           <!-- Hourly Forecast Strip -->
           <div class="hourly-forecast tilt-card" data-tilt="3">
             <h3 class="hourly-forecast__title">Hourly Forecast</h3>
@@ -500,6 +537,7 @@
   </script>
 
   <script src="/js/ambient.js" defer></script>
+  <script src="/js/skyview.js" defer></script>
   <% if (typeof weather !== 'undefined' && weather && weather.scene) { %>
     <script type="importmap">
       {
