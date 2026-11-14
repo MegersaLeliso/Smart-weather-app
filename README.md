@@ -13,6 +13,12 @@ A weather dashboard built with Node.js, Express, and EJS, using the Open-Meteo A
 - City autocomplete with country/region disambiguation
 - Outdoor/laundry suitability indicator based on upcoming precipitation, wind, and humidity
 - Background theme that changes based on the searched location's actual day/sunset/night state
+- **Zero-Gate Onboarding** – first-time visitors (no recent searches) are asked for their location and get their local weather automatically. A declined prompt is remembered, and a *Use my location* button can always retry. Coordinates are rounded to ~11 m before being sent.
+- **Major Shift Visualizer** – scans the next 12 hours of the hourly forecast and shows a bold warning card below the search bar when something changes fast:
+  - temperature drops (or rises) by more than 10 °C within 3 hours
+  - rain, snow, or thunderstorms start within 3 hours while it's dry now (≥ 50 % chance with a wet weather code, or ≥ 70 % chance on its own)
+
+  The card includes a mini chart of temperature and rain chance with the shift window highlighted.
 
 ### Interactive 3D
 - **3D weather hero** – custom low-poly models made in Blender (glowing sun, fluffy cloud, raincloud with raindrops, moon and stars), rendered with Three.js. The model matches the current condition and day/night state, with idle sway, gentle floating, hover tilt, and drag-to-spin (arrow keys work too). Falls back to the SVG icon if WebGL is unavailable.
@@ -27,6 +33,7 @@ All animations respect the operating system's *reduce motion* setting.
 - **Forecast cache** – Open-Meteo responses are cached for `CACHE_TTL_MINUTES` (default 20) to cut API calls
 - **Search history** – recent searches with relative timestamps, plus a *Clear* button
 - **Outdoor thresholds** – set your own max wind, humidity, and rain-chance limits for the suitability check
+- **Seasonal notification toggles** – switch *Sudden rain changes* and *Temperature drops* warnings on or off; the Major Shift card respects these settings
 
 If PostgreSQL is unavailable, the dashboard still shows live weather; the database-backed sections are simply hidden.
 
@@ -53,6 +60,7 @@ If PostgreSQL is unavailable, the dashboard still shows live weather; the databa
    createdb weather_db
    psql -d weather_db -f db/schema.sql
    ```
+   `schema.sql` is safe to re-run: on an existing database it adds any new columns (such as the notification toggles) without touching your data.
 4. Start the server
    ```bash
    npm start        # or: npm run dev  (auto-reload with nodemon)
@@ -66,6 +74,7 @@ server.js                 Express bootstrap
 routes/weather.js         Dashboard route, saved cities, history, preferences
 utils/weatherHelpers.js   Open-Meteo formatting, theme + 3D model/particle mapping
 utils/suitability.js      Outdoor/laundry evaluation
+utils/shiftDetector.js    Major Shift detection, chart geometry, alert-toggle filtering
 models/                   PostgreSQL data access
 db/schema.sql             Database schema
 views/                    EJS templates

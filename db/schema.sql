@@ -33,6 +33,12 @@ CREATE TABLE IF NOT EXISTS user_preferences (
   max_wind_kmh          NUMERIC(5,1) NOT NULL DEFAULT 25 CHECK (max_wind_kmh >= 0),
   max_humidity_pct      SMALLINT     NOT NULL DEFAULT 75 CHECK (max_humidity_pct BETWEEN 0 AND 100),
   max_rain_chance_pct   SMALLINT     NOT NULL DEFAULT 20 CHECK (max_rain_chance_pct BETWEEN 0 AND 100),
+  alert_rain_changes    BOOLEAN      NOT NULL DEFAULT true,
+  alert_temp_drops      BOOLEAN      NOT NULL DEFAULT true,
   updated_at            TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
+-- Seasonal notification toggles (upgrade path for databases created before they existed)
+ALTER TABLE user_preferences
+  ADD COLUMN IF NOT EXISTS alert_rain_changes BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS alert_temp_drops   BOOLEAN NOT NULL DEFAULT true;
 INSERT INTO user_preferences (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
