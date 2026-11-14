@@ -6,6 +6,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { detectMajorShifts } = require('./shiftDetector');
 
 /**
  * Converts an ISO time string "YYYY-MM-DDTHH:MM" to "HH:MM AM/PM".
@@ -232,6 +233,7 @@ function formatWeatherData(data, cityName, countryCode) {
     is_day: is_day,
     theme: theme,
     scene: mapWmoToScene(current.weather_code, is_day),
+    majorShift: detectMajorShifts(data),
     hourly: hourlyStrip
   };
 }

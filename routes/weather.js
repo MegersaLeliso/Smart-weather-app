@@ -12,6 +12,7 @@ const express = require('express');
 const axios = require('axios');
 const { formatWeatherData } = require('../utils/weatherHelpers');
 const { evaluateSuitability } = require('../utils/suitability');
+const { applyAlertPreferences } = require('../utils/shiftDetector');
 const savedCities = require('../models/savedCities');
 const weatherCache = require('../models/weatherCache');
 const searchHistory = require('../models/searchHistory');
@@ -55,6 +56,7 @@ async function renderDashboard(req, res, { weather = null, error = null, city = 
   let savedMatch = null;
   if (weather) {
     suitability = evaluateSuitability(weather, effectivePrefs);
+    weather.majorShift = applyAlertPreferences(weather.majorShift, effectivePrefs);
     savedMatch = saved ? saved.find((c) => sameCoords(c, weather)) || null : null;
   }
 
@@ -252,6 +254,9 @@ const clamp = (v, min, max, fallback) => {
   return Math.min(max, Math.max(min, n));
 };
 
+/** Checkbox value -> boolean ("1"/"on"/"true" are on; anything else, including absent, is off). */
+const isChecked = (v) => ['1', 'on', 'true'].includes(String(v).toLowerCase());
+
 router.post('/preferences', async (req, res, next) => {
   try {
     const d = preferences.DEFAULT_PREFS;
@@ -259,6 +264,9 @@ router.post('/preferences', async (req, res, next) => {
       max_wind_kmh: Math.round(clamp(req.body.max_wind_kmh, 0, 200, d.max_wind_kmh) * 10) / 10,
       max_humidity_pct: Math.round(clamp(req.body.max_humidity_pct, 0, 100, d.max_humidity_pct)),
       max_rain_chance_pct: Math.round(clamp(req.body.max_rain_chance_pct, 0, 100, d.max_rain_chance_pct)),
+      // Unchecked checkboxes aren't submitted, so a missing field means "off"
+      alert_rain_changes: isChecked(req.body.alert_rain_changes),
+      alert_temp_drops: isChecked(req.body.alert_temp_drops),
     });
     res.redirect(303, safeReturnTo(req.body.returnTo));
   } catch (err) {

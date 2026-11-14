@@ -100,6 +100,52 @@
         <% } %>
       </section>
 
+      <!-- Major Shift Visualizer: sudden changes in the next hours -->
+      <% if (typeof weather !== 'undefined' && weather && weather.majorShift) { const ms = weather.majorShift; const c = ms.chart; %>
+        <section class="shift-alert shift-alert--<%= ms.level %>" id="shiftAlert" role="alert" aria-labelledby="shiftAlertTitle">
+          <div class="shift-alert__head">
+            <i class="ph-fill ph-warning shift-alert__icon" aria-hidden="true"></i>
+            <div>
+              <p class="shift-alert__eyebrow">Major shift ahead · next <%= ms.lookaheadHours %> h</p>
+              <h2 class="shift-alert__title" id="shiftAlertTitle"><%= ms.shifts[0].title %></h2>
+            </div>
+          </div>
+          <ul class="shift-alert__list">
+            <% ms.shifts.forEach(function(s, idx) { %>
+              <li class="shift-alert__item">
+                <i class="ph-fill <%= s.icon %>" aria-hidden="true"></i>
+                <span><% if (idx > 0) { %><strong><%= s.title %>.</strong> <% } %><%= s.detail %></span>
+              </li>
+            <% }); %>
+          </ul>
+          <figure class="shift-alert__chart">
+            <svg viewBox="0 0 <%= c.width %> <%= c.height %>" role="img"
+                 aria-label="Temperature line and rain-chance bars for the next <%= ms.lookaheadHours %> hours, with the shift highlighted">
+              <% c.bands.forEach(function(b) { %>
+                <rect class="shift-chart__band shift-chart__band--<%= b.severity %>" x="<%= b.x %>" y="<%= b.y %>" width="<%= b.w %>" height="<%= b.h %>" rx="4" />
+              <% }); %>
+              <line class="shift-chart__base" x1="0" x2="<%= c.width %>" y1="<%= c.baseline %>" y2="<%= c.baseline %>" />
+              <% c.bars.forEach(function(b) { %>
+                <rect class="shift-chart__bar" x="<%= b.x %>" y="<%= b.y %>" width="<%= b.w %>" height="<%= b.h %>" rx="1.5" />
+              <% }); %>
+              <polyline class="shift-chart__line" points="<%= c.points %>" />
+              <% c.dots.forEach(function(d) { %>
+                <circle class="shift-chart__dot" cx="<%= d.x %>" cy="<%= d.y %>" r="3.5" />
+                <text class="shift-chart__dot-label" x="<%= d.x %>" y="<%= d.y - 7 %>" text-anchor="middle"><%= d.label %></text>
+              <% }); %>
+              <% c.ticks.forEach(function(t) { %>
+                <text class="shift-chart__tick" x="<%= t.x %>" y="<%= c.height - 6 %>" text-anchor="middle"><%= t.label %></text>
+              <% }); %>
+            </svg>
+            <figcaption class="shift-alert__legend">
+              <span><i class="shift-alert__key shift-alert__key--line"></i>Temperature</span>
+              <span><i class="shift-alert__key shift-alert__key--bar"></i>Rain chance</span>
+              <span><i class="shift-alert__key shift-alert__key--band"></i>Shift window</span>
+            </figcaption>
+          </figure>
+        </section>
+      <% } %>
+
       <!-- Error Alert -->
       <% if (typeof error !== 'undefined' && error) { %>
         <div class="error-alert" role="alert" id="errorAlert">
@@ -287,12 +333,18 @@
 
       <% } else if (typeof error === 'undefined' || !error) { %>
         <!-- Welcome State -->
-        <div class="welcome-state" id="welcomeState">
+        <%# Zero-Gate Onboarding: first-time visitors (no recent searches) get their local weather automatically %>
+        <div class="welcome-state" id="welcomeState"
+             data-auto-locate="<%= (typeof recentSearches === 'undefined' || !recentSearches || !recentSearches.length) ? 'true' : 'false' %>">
           <i class="ph ph-globe-hemisphere-east welcome-state__icon"></i>
           <h2 class="welcome-state__title">Discover Your Weather</h2>
           <p class="welcome-state__text">
             Enter a city name above to get real-time weather conditions, temperature, wind, humidity, and more.
           </p>
+          <button type="button" class="locate-btn" id="locateBtn">
+            <i class="ph ph-crosshair"></i> Use my location
+          </button>
+          <p class="welcome-state__status" id="locateStatus" role="status" aria-live="polite"></p>
         </div>
       <% } %>
 
@@ -341,7 +393,28 @@
               <span>Max rain chance (next 3h)</span>
               <span class="prefs__input"><input type="number" name="max_rain_chance_pct" min="0" max="100" step="1" value="<%= preferences.max_rain_chance_pct %>" required /> %</span>
             </label>
-            <button type="submit" class="search-btn prefs__save"><i class="ph ph-floppy-disk"></i> Save thresholds</button>
+            <fieldset class="prefs__alerts">
+              <legend class="prefs__alerts-title"><i class="ph ph-bell-ringing"></i> Seasonal notifications</legend>
+              <label class="toggle">
+                <span class="toggle__text">
+                  <span class="toggle__label">Sudden rain changes</span>
+                  <span class="toggle__hint">Warn when rain, snow or storms are about to start</span>
+                </span>
+                <input type="checkbox" class="toggle__input" role="switch" name="alert_rain_changes" value="1"
+                       <%= preferences.alert_rain_changes !== false ? 'checked' : '' %> />
+                <span class="toggle__track" aria-hidden="true"><span class="toggle__thumb"></span></span>
+              </label>
+              <label class="toggle">
+                <span class="toggle__text">
+                  <span class="toggle__label">Temperature drops</span>
+                  <span class="toggle__hint">Warn when it gets more than 10°C colder within 3 hours</span>
+                </span>
+                <input type="checkbox" class="toggle__input" role="switch" name="alert_temp_drops" value="1"
+                       <%= preferences.alert_temp_drops !== false ? 'checked' : '' %> />
+                <span class="toggle__track" aria-hidden="true"><span class="toggle__thumb"></span></span>
+              </label>
+            </fieldset>
+            <button type="submit" class="search-btn prefs__save"><i class="ph ph-floppy-disk"></i> Save preferences</button>
           </form>
         </details>
       <% } %>
@@ -379,6 +452,70 @@
       el.textContent = text;
       el.title = then.toLocaleString();
     });
+
+    // ---------- Zero-Gate Onboarding ----------
+    // On "/" with no recent searches, ask the browser for the user's location and load
+    // their local weather automatically. A declined permission is remembered so we don't
+    // re-prompt on every visit; the "Use my location" button always retries.
+    (function () {
+      const welcome = document.getElementById('welcomeState');
+      const locateBtn = document.getElementById('locateBtn');
+      const locateStatus = document.getElementById('locateStatus');
+      if (!welcome || !form) return;
+
+      const DECLINED_KEY = 'zeroGate.declined';
+      const setStatus = (text) => { if (locateStatus) locateStatus.textContent = text; };
+      const store = (fn) => { try { return fn(localStorage); } catch (e) { return null; } };
+
+      if (!('geolocation' in navigator)) {
+        if (locateBtn) locateBtn.hidden = true;
+        return;
+      }
+
+      function locateAndSubmit() {
+        setStatus('Finding your local weather…');
+        if (locateBtn) locateBtn.disabled = true;
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            // 4 decimals (~11 m) is plenty for a forecast and avoids sending a precise fix
+            latInput.value = pos.coords.latitude.toFixed(4);
+            lonInput.value = pos.coords.longitude.toFixed(4);
+            cityInput.value = 'My Location';
+            if (overlay) overlay.classList.add('active');
+            form.submit();
+          },
+          (err) => {
+            if (locateBtn) locateBtn.disabled = false;
+            if (err.code === err.PERMISSION_DENIED) {
+              store((s) => s.setItem(DECLINED_KEY, '1'));
+              setStatus('Location access is off. Search for a city above, or allow location and tap “Use my location”.');
+            } else {
+              setStatus('We couldn’t detect your location. Search for a city above instead.');
+            }
+          },
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 10 * 60 * 1000 }
+        );
+      }
+
+      if (locateBtn) {
+        locateBtn.addEventListener('click', () => {
+          store((s) => s.removeItem(DECLINED_KEY));
+          locateAndSubmit();
+        });
+      }
+
+      const declined = store((s) => s.getItem(DECLINED_KEY)) === '1';
+      if (welcome.dataset.autoLocate !== 'true' || declined) return;
+
+      // Skip the automatic attempt if the browser has already blocked location for this site
+      if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions.query({ name: 'geolocation' })
+          .then((st) => { if (st.state !== 'denied') locateAndSubmit(); })
+          .catch(locateAndSubmit);
+      } else {
+        locateAndSubmit();
+      }
+    })();
 
     // Show loading overlay on form submit
     if (form && overlay) {
