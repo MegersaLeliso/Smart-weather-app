@@ -84,6 +84,26 @@ function mapWmoToIcon(code) {
 }
 
 /**
+ * Picks the 3D hero model (public/models/<model>.glb) and the ambient
+ * particle layer that best match a WMO weather code and day/night state.
+ * @param {number} code
+ * @param {boolean} isDay
+ * @returns {{model: 'sun'|'moon'|'cloud'|'rain', particles: 'none'|'clouds'|'rain'|'snow'|'stars'}}
+ */
+function mapWmoToScene(code, isDay) {
+  const isSnow = (code >= 71 && code <= 77) || code === 85 || code === 86;
+  const isWet = (code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95;
+
+  if (isWet) return { model: 'rain', particles: 'rain' };
+  if (isSnow) return { model: 'cloud', particles: 'snow' };
+  if (code === 0 || code === 1) {
+    return isDay ? { model: 'sun', particles: 'clouds' } : { model: 'moon', particles: 'stars' };
+  }
+  // Partly cloudy, overcast, fog
+  return { model: 'cloud', particles: isDay ? 'clouds' : 'stars' };
+}
+
+/**
  * Reads the content of an SVG file and returns it as an inline string.
  * Falls back to no-result.svg if the target file is missing.
  * @param {string} filename
@@ -182,6 +202,15 @@ function formatWeatherData(data, cityName, countryCode) {
 
   const currentIconName = mapWmoToIcon(current.weather_code);
 
+  // Highest precipitation probability over the next 3 hours (incl. current hour)
+  let rainChance3h = 0;
+  if (Array.isArray(hourly.precipitation_probability)) {
+    for (let i = safeStart; i < safeStart + 3 && i < hourly.time.length; i++) {
+      const p = hourly.precipitation_probability[i];
+      if (typeof p === 'number' && p > rainChance3h) rainChance3h = p;
+    }
+  }
+
   return {
     city: cityName,
     country: countryCode,
@@ -192,12 +221,17 @@ function formatWeatherData(data, cityName, countryCode) {
     iconSvg: getInlineSvg(currentIconName),
     humidity: current.relative_humidity_2m,
     pressure: Math.round(current.pressure_msl),
-    wind_speed: current.wind_speed_10m,
+    wind_speed: current.wind_speed_10m, // km/h (Open-Meteo default unit)
+    precipitation: typeof current.precipitation === 'number' ? current.precipitation : 0,
+    rain_chance_3h: rainChance3h,
+    latitude: data.latitude,
+    longitude: data.longitude,
     visibility: 10.0, // Default visibility fallback
     sunrise: formatLocalTime(daily.sunrise[0]),
     sunset: formatLocalTime(daily.sunset[0]),
     is_day: is_day,
     theme: theme,
+    scene: mapWmoToScene(current.weather_code, is_day),
     hourly: hourlyStrip
   };
 }

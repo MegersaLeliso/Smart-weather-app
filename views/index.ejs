@@ -34,6 +34,9 @@
         <div class="default-ambient"></div>
       </div>
     <% } %>
+    <% if (typeof weather !== 'undefined' && weather && weather.scene) { %>
+      <canvas class="ambient-particles" id="ambientParticles" data-particles="<%= weather.scene.particles %>" aria-hidden="true"></canvas>
+    <% } %>
   </div>
 
   <div class="app-wrapper">
@@ -74,6 +77,27 @@
             Search
           </button>
         </form>
+
+        <% if (typeof savedCities !== 'undefined' && savedCities && savedCities.length) { %>
+          <div class="saved-cities" aria-label="Saved cities">
+            <% savedCities.forEach(function(c) { %>
+              <div class="city-chip<%= (typeof savedMatch !== 'undefined' && savedMatch && savedMatch.id === c.id) ? ' city-chip--active' : '' %>">
+                <a class="city-chip__link js-nav"
+                   href="/?city=<%= encodeURIComponent(c.name) %>&country=<%= encodeURIComponent(c.country) %>&lat=<%= c.latitude %>&lon=<%= c.longitude %>"
+                   title="Load <%= c.name %>">
+                  <i class="ph-fill ph-star city-chip__star"></i>
+                  <%= c.name %><% if (c.country) { %><span class="city-chip__country"><%= c.country %></span><% } %>
+                </a>
+                <form action="/cities/<%= c.id %>/delete" method="POST" class="city-chip__delete-form">
+                  <input type="hidden" name="returnTo" value="<%= returnTo %>" />
+                  <button type="submit" class="city-chip__delete" aria-label="Remove <%= c.name %> from saved cities" title="Remove">
+                    <i class="ph ph-x"></i>
+                  </button>
+                </form>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
       </section>
 
       <!-- Error Alert -->
@@ -92,12 +116,44 @@
           <div class="weather-hero">
             <div class="weather-hero__location">
               <span class="weather-hero__city"><%= weather.city %></span>
-              <span class="weather-hero__country"><%= weather.country %></span>
+              <% if (weather.country) { %><span class="weather-hero__country"><%= weather.country %></span><% } %>
+              <% if (typeof savedCities !== 'undefined' && savedCities) { %>
+                <% if (savedMatch) { %>
+                  <form action="/cities/<%= savedMatch.id %>/delete" method="POST" class="star-form">
+                    <input type="hidden" name="returnTo" value="<%= returnTo %>" />
+                    <button type="submit" class="star-btn star-btn--on" aria-label="Remove <%= weather.city %> from saved cities" title="Saved — click to remove">
+                      <i class="ph-fill ph-star"></i>
+                    </button>
+                  </form>
+                <% } else { %>
+                  <form action="/cities" method="POST" class="star-form">
+                    <input type="hidden" name="name" value="<%= weather.city %>" />
+                    <input type="hidden" name="country" value="<%= weather.country %>" />
+                    <input type="hidden" name="latitude" value="<%= weather.latitude %>" />
+                    <input type="hidden" name="longitude" value="<%= weather.longitude %>" />
+                    <input type="hidden" name="returnTo" value="<%= returnTo %>" />
+                    <button type="submit" class="star-btn" aria-label="Save <%= weather.city %>" title="Save this city">
+                      <i class="ph ph-star"></i>
+                    </button>
+                  </form>
+                <% } %>
+              <% } %>
             </div>
             <p class="weather-hero__date"><%= weather.date %></p>
+            <p class="weather-hero__freshness">
+              <% if (weather.fromCache) { %>
+                <i class="ph ph-database"></i> Cached · updated <%= weather.ageMinutes === 0 ? 'just now' : weather.ageMinutes + ' min ago' %>
+              <% } else { %>
+                <i class="ph ph-broadcast"></i> Live from Open-Meteo
+              <% } %>
+            </p>
 
-            <div class="weather-hero__icon-wrapper">
-              <%- weather.iconSvg %>
+            <div class="hero-stage" data-hero-3d data-model="<%= weather.scene.model %>" data-theme="<%= weather.theme %>">
+              <canvas class="hero-stage__canvas" tabindex="0" role="img"
+                      aria-label="3D <%= weather.description %> model — drag or use arrow keys to spin"></canvas>
+              <div class="weather-hero__icon-wrapper hero-stage__fallback">
+                <%- weather.iconSvg %>
+              </div>
             </div>
 
             <div class="weather-hero__temp">
@@ -110,7 +166,7 @@
           </div>
 
           <!-- Hourly Forecast Strip -->
-          <div class="hourly-forecast">
+          <div class="hourly-forecast tilt-card" data-tilt="3">
             <h3 class="hourly-forecast__title">Hourly Forecast</h3>
             <div class="hourly-forecast__strip">
               <% weather.hourly.forEach(function(hour) { %>
@@ -127,30 +183,53 @@
 
           <!-- Metrics Grid (Varying shadow/borders) -->
           <div class="metrics-grid">
-            <div class="metric-card">
+            <div class="metric-card tilt-card" data-tilt="10">
               <i class="ph ph-drop metric-card__icon"></i>
               <div class="metric-card__value"><span class="data-mono"><%= weather.humidity %></span>%</div>
               <div class="metric-card__label">Humidity</div>
             </div>
-            <div class="metric-card">
+            <div class="metric-card tilt-card" data-tilt="10">
               <i class="ph ph-wind metric-card__icon"></i>
-              <div class="metric-card__value"><span class="data-mono"><%= weather.wind_speed %></span> m/s</div>
+              <div class="metric-card__value"><span class="data-mono"><%= weather.wind_speed %></span> km/h</div>
               <div class="metric-card__label">Wind Speed</div>
             </div>
-            <div class="metric-card">
+            <div class="metric-card tilt-card" data-tilt="10">
               <i class="ph ph-gauge metric-card__icon"></i>
               <div class="metric-card__value"><span class="data-mono"><%= weather.pressure %></span> hPa</div>
               <div class="metric-card__label">Pressure</div>
             </div>
-            <div class="metric-card">
+            <div class="metric-card tilt-card" data-tilt="10">
               <i class="ph ph-eye metric-card__icon"></i>
               <div class="metric-card__value"><span class="data-mono"><%= weather.visibility %></span> km</div>
               <div class="metric-card__label">Visibility</div>
             </div>
           </div>
 
+          <!-- Outdoor / Laundry Suitability -->
+          <% if (typeof suitability !== 'undefined' && suitability) { %>
+            <div class="suitability suitability--<%= suitability.level %> tilt-card" data-tilt="3" id="suitability">
+              <div class="suitability__header">
+                <i class="ph-fill <%= suitability.level === 'good' ? 'ph-check-circle' : (suitability.level === 'fair' ? 'ph-warning-circle' : 'ph-x-circle') %> suitability__icon"></i>
+                <div>
+                  <h2 class="suitability__title">Outdoor &amp; Laundry</h2>
+                  <p class="suitability__label"><%= suitability.label %></p>
+                </div>
+              </div>
+              <ul class="suitability__checks">
+                <% suitability.checks.forEach(function(chk) { %>
+                  <li class="suitability__check <%= chk.ok ? 'is-ok' : 'is-fail' %>">
+                    <i class="ph <%= chk.ok ? 'ph-check' : 'ph-x' %>"></i>
+                    <span class="suitability__check-label"><%= chk.label %><% if (chk.note) { %> <em>— <%= chk.note %></em><% } %></span>
+                    <span class="data-mono suitability__check-value"><%= chk.value %></span>
+                    <span class="suitability__check-limit"><%= chk.limit %></span>
+                  </li>
+                <% }); %>
+              </ul>
+            </div>
+          <% } %>
+
           <!-- Sun Schedule -->
-          <div class="sun-schedule">
+          <div class="sun-schedule tilt-card" data-tilt="5">
             <h2 class="sun-schedule__title">Solar Schedule</h2>
             <div class="sun-schedule__row">
               <div class="sun-item">
@@ -180,6 +259,56 @@
         </div>
       <% } %>
 
+      <!-- Recent Searches -->
+      <% if (typeof recentSearches !== 'undefined' && recentSearches && recentSearches.length) { %>
+        <section class="panel recent-searches" id="recentSearches">
+          <div class="panel__header">
+            <h2 class="panel__title"><i class="ph ph-clock-counter-clockwise"></i> Recent Searches</h2>
+            <form action="/history/clear" method="POST">
+              <input type="hidden" name="returnTo" value="<%= returnTo %>" />
+              <button type="submit" class="text-btn">Clear</button>
+            </form>
+          </div>
+          <ul class="recent-list">
+            <% recentSearches.forEach(function(r) { %>
+              <li>
+                <a class="recent-list__item js-nav"
+                   href="/?city=<%= encodeURIComponent(r.name) %>&country=<%= encodeURIComponent(r.country) %>&lat=<%= r.latitude %>&lon=<%= r.longitude %>">
+                  <span class="recent-list__name"><%= r.name %><% if (r.country) { %> <span class="recent-list__country"><%= r.country %></span><% } %></span>
+                  <time class="recent-list__time" datetime="<%= new Date(r.searched_at).toISOString() %>"><%= new Date(r.searched_at).toISOString() %></time>
+                </a>
+              </li>
+            <% }); %>
+          </ul>
+        </section>
+      <% } %>
+
+      <!-- Outdoor / Laundry Thresholds -->
+      <% if (typeof dbAvailable !== 'undefined' && dbAvailable && preferences) { %>
+        <details class="panel prefs" id="preferences">
+          <summary class="panel__title prefs__summary">
+            <i class="ph ph-sliders-horizontal"></i> My Outdoor Thresholds
+            <span class="prefs__current data-mono"><%= preferences.max_wind_kmh %> km/h · <%= preferences.max_humidity_pct %>% RH · <%= preferences.max_rain_chance_pct %>% rain</span>
+          </summary>
+          <form action="/preferences" method="POST" class="prefs__form">
+            <input type="hidden" name="returnTo" value="<%= returnTo %>" />
+            <label class="prefs__field">
+              <span>Max wind speed</span>
+              <span class="prefs__input"><input type="number" name="max_wind_kmh" min="0" max="200" step="0.5" value="<%= preferences.max_wind_kmh %>" required /> km/h</span>
+            </label>
+            <label class="prefs__field">
+              <span>Max humidity</span>
+              <span class="prefs__input"><input type="number" name="max_humidity_pct" min="0" max="100" step="1" value="<%= preferences.max_humidity_pct %>" required /> %</span>
+            </label>
+            <label class="prefs__field">
+              <span>Max rain chance (next 3h)</span>
+              <span class="prefs__input"><input type="number" name="max_rain_chance_pct" min="0" max="100" step="1" value="<%= preferences.max_rain_chance_pct %>" required /> %</span>
+            </label>
+            <button type="submit" class="search-btn prefs__save"><i class="ph ph-floppy-disk"></i> Save thresholds</button>
+          </form>
+        </details>
+      <% } %>
+
     </div>
   </div>
 
@@ -195,6 +324,24 @@
     let currentController = null;
     let highlightedIndex = -1;
     let suggestionsData = [];
+
+    // Show loading overlay when loading a saved city or recent search
+    document.querySelectorAll('.js-nav').forEach((link) => {
+      link.addEventListener('click', () => overlay && overlay.classList.add('active'));
+    });
+
+    // Render recent-search timestamps as relative times ("5 min ago")
+    document.querySelectorAll('.recent-list__time').forEach((el) => {
+      const then = new Date(el.getAttribute('datetime'));
+      const mins = Math.round((Date.now() - then.getTime()) / 60000);
+      let text;
+      if (mins < 1) text = 'just now';
+      else if (mins < 60) text = `${mins} min ago`;
+      else if (mins < 1440) text = `${Math.round(mins / 60)} h ago`;
+      else text = then.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      el.textContent = text;
+      el.title = then.toLocaleString();
+    });
 
     // Show loading overlay on form submit
     if (form && overlay) {
@@ -351,5 +498,18 @@
       suggestionsData = [];
     }
   </script>
+
+  <script src="/js/ambient.js" defer></script>
+  <% if (typeof weather !== 'undefined' && weather && weather.scene) { %>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script type="module" src="/js/hero3d.js"></script>
+  <% } %>
 
 <%- include('partials/footer') %>

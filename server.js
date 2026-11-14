@@ -4,6 +4,8 @@
  * static asset pipelines, global middleware, and mounts route controllers.
  */
 
+require('dotenv').config();
+
 const express = require('express');
 const path = require('path');
 const weatherRouter = require('./routes/weather');
@@ -19,6 +21,9 @@ app.set('views', path.join(__dirname, 'views'));
 // 2. Serve Static Assets
 // Enable the serving of plain files (CSS, images, client JS) directly from the /public directory
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Parse HTML form submissions (saved cities, preferences, history)
+app.use(express.urlencoded({ extended: false }));
 
 // 3. Mount Application Routers
 // Route all root-level requests through our dedicated weather sub-router
@@ -42,7 +47,14 @@ app.use((err, req, res, next) => {
     res.status(statusCode).render('index', {
         weather: null,
         error: `Something went wrong on our end (${err.message || 'Internal Server Error'}). Please try again later.`,
-        city: req.query.city || ''
+        city: req.query.city || '',
+        savedCities: null,
+        recentSearches: null,
+        preferences: null,
+        dbAvailable: false,
+        suitability: null,
+        savedMatch: null,
+        returnTo: '/'
     });
 });
 

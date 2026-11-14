@@ -839,3 +839,447 @@ body {
   stroke: var(--color-text-main) !important;
   transition: stroke var(--transition-normal);
 }
+
+/* ==========================================================================
+   PostgreSQL-backed features: saved cities, cache badge, suitability,
+   recent searches and thresholds. All colors come from the theme tokens
+   so day / sunset / night / default themes carry through automatically.
+   ========================================================================== */
+
+/* ---------- Saved City Chips ---------- */
+.saved-cities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.city-chip {
+  display: inline-flex;
+  align-items: center;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.city-chip:hover,
+.city-chip--active {
+  background: var(--color-surface-hero);
+  border-color: var(--color-accent);
+}
+
+.city-chip__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 4px 6px 12px;
+  color: var(--color-text-main);
+  text-decoration: none;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.city-chip__star {
+  color: var(--color-accent);
+  font-size: 0.9rem;
+}
+
+.city-chip__country {
+  font-size: 0.65rem;
+  font-weight: 600;
+  opacity: 0.6;
+  text-transform: uppercase;
+}
+
+.city-chip__delete-form {
+  display: inline-flex;
+}
+
+.city-chip__delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-right: 4px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.city-chip__delete:hover,
+.city-chip__delete:focus-visible {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--color-text-main);
+}
+
+/* ---------- Hero: Star Toggle & Freshness ---------- */
+.star-form {
+  display: inline-flex;
+}
+
+.star-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface-subtle);
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.star-btn:hover,
+.star-btn:focus-visible {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  transform: scale(1.08);
+}
+
+.star-btn--on {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.weather-hero__freshness {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  margin-top: calc(-1 * var(--sp-1));
+}
+
+/* ---------- Outdoor / Laundry Suitability ---------- */
+.suitability {
+  --status: #22c55e;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--status);
+  border-radius: 20px;
+  padding: var(--sp-5) var(--sp-6);
+  margin-bottom: var(--sp-6);
+}
+
+.suitability--good { --status: #22c55e; }
+.suitability--fair { --status: #f59e0b; }
+.suitability--poor { --status: #ef4444; }
+
+.suitability__header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+
+.suitability__icon {
+  font-size: 2rem;
+  color: var(--status);
+  flex-shrink: 0;
+}
+
+.suitability__title {
+  font-family: var(--ff-display);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.suitability__label {
+  font-family: var(--ff-display);
+  font-size: var(--fs-base);
+  font-weight: 700;
+}
+
+.suitability__checks {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.suitability__check {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--fs-sm);
+}
+
+.suitability__check i { font-size: 1rem; }
+.suitability__check.is-ok i { color: #22c55e; }
+.suitability__check.is-fail i { color: #ef4444; }
+.suitability__check em { color: var(--color-text-muted); font-style: normal; }
+
+.suitability__check-value { font-weight: 600; }
+
+.suitability__check-limit {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  min-width: 72px;
+  text-align: right;
+}
+
+/* ---------- Generic Panel (Recent Searches / Thresholds) ---------- */
+.panel {
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: var(--sp-5) var(--sp-6);
+  margin-top: var(--sp-6);
+}
+
+.panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-3);
+}
+
+.panel__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--ff-display);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.text-btn {
+  background: none;
+  border: none;
+  color: var(--color-accent);
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.text-btn:hover { text-decoration: underline; }
+
+/* ---------- Recent Searches ---------- */
+.recent-list {
+  list-style: none;
+}
+
+.recent-list__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-2);
+  margin: 0 calc(-1 * var(--sp-2));
+  border-radius: 8px;
+  color: var(--color-text-main);
+  text-decoration: none;
+  font-size: var(--fs-sm);
+  transition: background var(--transition-fast);
+}
+
+.recent-list__item:hover {
+  background: var(--color-surface-hero);
+}
+
+.recent-list__name { font-weight: 600; }
+
+.recent-list__country {
+  font-size: 0.65rem;
+  opacity: 0.6;
+  text-transform: uppercase;
+}
+
+.recent-list__time {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* ---------- Thresholds Form ---------- */
+.prefs__summary {
+  cursor: pointer;
+  list-style: none;
+  flex-wrap: wrap;
+}
+
+.prefs__summary::-webkit-details-marker { display: none; }
+
+.prefs__current {
+  margin-left: auto;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  color: var(--color-text-main);
+  opacity: 0.8;
+}
+
+.prefs__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+
+.prefs__field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--fs-sm);
+}
+
+.prefs__input {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-muted);
+  font-size: var(--fs-xs);
+}
+
+.prefs__input input {
+  width: 80px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-hero);
+  color: var(--color-text-main);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-sm);
+  text-align: right;
+}
+
+.prefs__input input:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.prefs__save {
+  align-self: flex-end;
+  margin-top: var(--sp-2);
+}
+
+@media (max-width: 600px) {
+  .suitability__check {
+    grid-template-columns: auto 1fr auto;
+  }
+  .suitability__check-limit {
+    grid-column: 2 / -1;
+    text-align: left;
+    min-width: 0;
+    margin-top: -6px;
+  }
+  .prefs__current {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* ==========================================================================
+   3D Hero Stage (Three.js) — falls back to the inline SVG icon
+   ========================================================================== */
+.hero-stage {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+  height: 210px;
+  margin: calc(var(--sp-2) * -1) auto var(--sp-1);
+  touch-action: pan-y; /* horizontal drag spins the model; vertical still scrolls */
+}
+
+.hero-stage__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  cursor: grab;
+  border-radius: 24px;
+  transition: opacity 600ms ease;
+}
+
+.hero-stage.is-dragging .hero-stage__canvas { cursor: grabbing; }
+
+.hero-stage__canvas:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.hero-stage__fallback {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  transition: opacity 400ms ease;
+}
+
+.hero-stage.is-3d .hero-stage__canvas { opacity: 1; }
+.hero-stage.is-3d .hero-stage__fallback { opacity: 0; pointer-events: none; }
+
+/* ==========================================================================
+   Ambient particle layer (rain / snow / clouds / stars)
+   ========================================================================== */
+.ambient-particles {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ==========================================================================
+   3D glassmorphism card tilt
+   ========================================================================== */
+.tilt-card {
+  position: relative;
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transform-style: preserve-3d;
+  transition: transform 600ms cubic-bezier(0.2, 0.8, 0.2, 1),
+              background var(--transition-fast), border-color var(--transition-fast),
+              box-shadow var(--transition-normal);
+}
+
+.tilt-card.is-tilting {
+  transition: transform 90ms linear, background var(--transition-fast),
+              border-color var(--transition-fast), box-shadow var(--transition-normal);
+  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.35);
+}
+
+/* Moving glare highlight that follows the pointer */
+.tilt-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--gx, 50%) var(--gy, 50%),
+              rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 60%);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.tilt-card.is-tilting::after { opacity: 1; }
+
+/* Lift the metric card contents off the glass for parallax depth */
+.metric-card.tilt-card > * {
+  transform: translateZ(24px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tilt-card,
+  .tilt-card.is-tilting { transform: none; transition: none; }
+  .hero-stage__canvas,
+  .hero-stage__fallback { transition: none; }
+}
