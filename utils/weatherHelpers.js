@@ -182,6 +182,15 @@ function formatWeatherData(data, cityName, countryCode) {
 
   const currentIconName = mapWmoToIcon(current.weather_code);
 
+  // Highest precipitation probability over the next 3 hours (incl. current hour)
+  let rainChance3h = 0;
+  if (Array.isArray(hourly.precipitation_probability)) {
+    for (let i = safeStart; i < safeStart + 3 && i < hourly.time.length; i++) {
+      const p = hourly.precipitation_probability[i];
+      if (typeof p === 'number' && p > rainChance3h) rainChance3h = p;
+    }
+  }
+
   return {
     city: cityName,
     country: countryCode,
@@ -192,7 +201,11 @@ function formatWeatherData(data, cityName, countryCode) {
     iconSvg: getInlineSvg(currentIconName),
     humidity: current.relative_humidity_2m,
     pressure: Math.round(current.pressure_msl),
-    wind_speed: current.wind_speed_10m,
+    wind_speed: current.wind_speed_10m, // km/h (Open-Meteo default unit)
+    precipitation: typeof current.precipitation === 'number' ? current.precipitation : 0,
+    rain_chance_3h: rainChance3h,
+    latitude: data.latitude,
+    longitude: data.longitude,
     visibility: 10.0, // Default visibility fallback
     sunrise: formatLocalTime(daily.sunrise[0]),
     sunset: formatLocalTime(daily.sunset[0]),
